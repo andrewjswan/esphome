@@ -75,9 +75,9 @@ async def to_code(config) -> None:
     await i2c.register_i2c_device(var, config)
 
     if config[CONF_TYPE] == TYPE_2005:
-        cg.add_define("TYPE_2005")
+        cg.add_define("PM2005_USE_TYPE_2005")
     else:
-        cg.add_define("TYPE_2105")
+        cg.add_define("PM2005_USE_TYPE_2105")
 
     if CONF_PM_1_0 in config:
         sens = await sensor.new_sensor(config[CONF_PM_1_0])

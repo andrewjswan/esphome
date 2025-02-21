@@ -6,7 +6,7 @@ namespace pm2005 {
 
 static const char *const TAG = "pm2005";
 
-#ifdef TYPE_2005
+#ifdef PM2005_USE_TYPE_2005
 static const uint8_t SITUATION_VALUE_INDEX = 3;
 static const uint8_t PM_1_0_VALUE_INDEX = 4;
 static const uint8_t PM_2_5_VALUE_INDEX = 6;
@@ -20,6 +20,36 @@ static const uint8_t PM_10_0_VALUE_INDEX = 7;
 static const uint8_t MEASURING_VALUE_INDEX = 9;
 #endif
 
+// Converts a sensor situation to a human readable string
+static const LogString *pm2005_get_situation_string(int status) {
+  switch (status) {
+    case 1:
+      return LOG_STR("Close.");
+    case 2:
+      return LOG_STR("Malfunction.");
+    case 3:
+      return LOG_STR("Under detecting.");
+    case 0x80:
+      return LOG_STR("Detecting completed.");
+    default:
+      return LOG_STR("Invalid");
+  }
+}
+
+// Converts a sensor measuring mode to a human readable string
+static const LogString *pm2005_get_measuring_mode_string(int status) {
+  switch (status) {
+    case 2:
+      return LOG_STR("Single measuring mode.");
+    case 3:
+      return LOG_STR("Continuous measuring mode.");
+    case 5:
+      return LOG_STR("Dynamic measuring mode.");
+    default:
+      return LOG_STR("Unknown");
+  }
+}
+
 void PM2005Component::update() {
   if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
     ESP_LOGW(TAG, "Read result failed");
@@ -27,17 +57,17 @@ void PM2005Component::update() {
     return;
   }
 
-  if (sensor_situation_ != data_buffer_[SITUATION_VALUE_INDEX]) {
-    sensor_situation_ = data_buffer_[SITUATION_VALUE_INDEX];
-    if (sensor_situation_ == 1) {
-      ESP_LOGD(TAG, "Sensor situation: Close.");
-    } else if (sensor_situation_ == 2) {
-      ESP_LOGD(TAG, "Sensor situation: Malfunction.");
+  if (this->sensor_situation_ != data_buffer_[SITUATION_VALUE_INDEX]) {
+    this->sensor_situation_ = data_buffer_[SITUATION_VALUE_INDEX];
+    if (this->sensor_situation_ == 1)
+      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
+    else if (this->sensor_situation_ == 2) {
+      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
       this->status_set_warning();
-    } else if (sensor_situation_ == 3) {
-      ESP_LOGD(TAG, "Sensor situation: Under detecting.");
-    } else if (sensor_situation_ == 0x80) {
-      ESP_LOGD(TAG, "Sensor situation: Detecting completed.");
+    } else if (this->sensor_situation_ == 3)
+      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
+    else if (this->sensor_situation_ == 0x80) {
+      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
 
       if (this->pm_1_0_sensor_ != nullptr) {
         int16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
@@ -58,12 +88,9 @@ void PM2005Component::update() {
       }
 
       uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
-      if (sensor_measuring_mode == 2) {
-        ESP_LOGD(TAG, "The measuring mode of sensor: Single measuring mode.");
-      } else if (sensor_measuring_mode == 3) {
-        ESP_LOGD(TAG, "The measuring mode of sensor: Continuous measuring mode.");
-      } else if (sensor_measuring_mode == 5) {
-        ESP_LOGD(TAG, "The measuring mode of sensor: Dynamic measuring mode.");
+      if (sensor_measuring_mode >= 2 && sensor_measuring_mode <= 5) {
+        ESP_LOGD(TAG, "The measuring mode of sensor: %s.",
+                 LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
       }
 
       this->status_clear_warning();
@@ -78,10 +105,10 @@ uint16_t PM2005Component::get_sensor_value_(const uint8_t *data, uint8_t i) {
 void PM2005Component::dump_config() {
   ESP_LOGCONFIG(TAG, "PM2005:");
 
-#ifdef TYPE_2005
-  ESP_LOGCONFIG(TAG, "Type: PM2005");
+#ifdef PM2005_USE_TYPE_2005
+  ESP_LOGCONFIG(TAG, "  Type: PM2005");
 #else
-  ESP_LOGCONFIG(TAG, "Type: PM2105");
+  ESP_LOGCONFIG(TAG, "  Type: PM2105");
 #endif
 
   LOG_I2C_DEVICE(this);
