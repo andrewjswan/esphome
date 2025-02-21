@@ -21,7 +21,9 @@ DEPENDENCIES = ["i2c"]
 CODEOWNERS = ["@andrewjswan"]
 
 pm2005_ns = cg.esphome_ns.namespace("pm2005")
-PM2005Component = pm2005_ns.class_("PM2005Component", cg.PollingComponent, i2c.I2CDevice)
+PM2005Component = pm2005_ns.class_(
+    "PM2005Component", cg.PollingComponent, i2c.I2CDevice
+)
 
 TYPE_2005 = "PM2005"
 TYPE_2105 = "PM2105"
@@ -35,7 +37,9 @@ CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(PM2005Component),
-            cv.Optional(CONF_TYPE, default=TYPE_2005): cv.one_of(*SENSOR_TYPE, upper=True),
+            cv.Optional(CONF_TYPE, default=TYPE_2005): cv.one_of(
+                *SENSOR_TYPE, upper=True
+            ),
             cv.Optional(CONF_PM_1_0): sensor.sensor_schema(
                 unit_of_measurement=UNIT_MICROGRAMS_PER_CUBIC_METER,
                 icon=ICON_CHEMICAL_WEAPON,
