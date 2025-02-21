@@ -29,14 +29,14 @@ void PM2005Component::update() {
 
   if (sensor_situation_ != data_buffer_[SITUATION_VALUE_INDEX]) {
     sensor_situation_ = data_buffer_[SITUATION_VALUE_INDEX];
-    if (sensor_situation_ == 1)
+    if (sensor_situation_ == 1) {
       ESP_LOGD(TAG, "Sensor situation: Close.");
-    else if (sensor_situation_ == 2) {
+    } else if (sensor_situation_ == 2) {
       ESP_LOGD(TAG, "Sensor situation: Malfunction.");
       this->status_set_warning();
-    } else if (sensor_situation_ == 3)
+    } else if (sensor_situation_ == 3) {
       ESP_LOGD(TAG, "Sensor situation: Under detecting.");
-    else if (sensor_situation_ == 0x80) {
+    } else if (sensor_situation_ == 0x80) {
       ESP_LOGD(TAG, "Sensor situation: Detecting completed.");
 
       if (this->pm_1_0_sensor_ != nullptr) {
@@ -58,13 +58,13 @@ void PM2005Component::update() {
       }
 
       uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
-      ;
-      if (sensor_measuring_mode == 2)
+      if (sensor_measuring_mode == 2) {
         ESP_LOGD(TAG, "The measuring mode of sensor: Single measuring mode.");
-      else if (sensor_measuring_mode == 3)
+      } else if (sensor_measuring_mode == 3) {
         ESP_LOGD(TAG, "The measuring mode of sensor: Continuous measuring mode.");
-      else if (sensor_measuring_mode == 5)
+      } else if (sensor_measuring_mode == 5) {
         ESP_LOGD(TAG, "The measuring mode of sensor: Dynamic measuring mode.");
+      }
 
       this->status_clear_warning();
     }
