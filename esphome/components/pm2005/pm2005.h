@@ -21,7 +21,7 @@ class PM2005Component : public PollingComponent, public i2c::I2CDevice {
   void update() override;
 
  protected:
-  uint8_t sensor_situation_ = 0;
+  uint8_t sensor_situation_{0};
   uint8_t data_buffer_[12];
 
   sensor::Sensor *pm_1_0_sensor_{nullptr};

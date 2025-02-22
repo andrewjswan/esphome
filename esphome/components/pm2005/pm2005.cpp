@@ -24,13 +24,13 @@ static const uint8_t MEASURING_VALUE_INDEX = 9;
 static const LogString *pm2005_get_situation_string(int status) {
   switch (status) {
     case 1:
-      return LOG_STR("Close.");
+      return LOG_STR("Close");
     case 2:
-      return LOG_STR("Malfunction.");
+      return LOG_STR("Malfunction");
     case 3:
-      return LOG_STR("Under detecting.");
+      return LOG_STR("Under detecting");
     case 0x80:
-      return LOG_STR("Detecting completed.");
+      return LOG_STR("Detecting completed");
     default:
       return LOG_STR("Invalid");
   }
@@ -40,13 +40,13 @@ static const LogString *pm2005_get_situation_string(int status) {
 static const LogString *pm2005_get_measuring_mode_string(int status) {
   switch (status) {
     case 2:
-      return LOG_STR("Single measuring mode.");
+      return LOG_STR("Single measuring mode");
     case 3:
-      return LOG_STR("Continuous measuring mode.");
+      return LOG_STR("Continuous measuring mode");
     case 5:
-      return LOG_STR("Dynamic measuring mode.");
+      return LOG_STR("Dynamic measuring mode");
     default:
-      return LOG_STR("Unknown");
+      return LOG_STR("Timing measuring mode");
   }
 }
 
@@ -57,45 +57,43 @@ void PM2005Component::update() {
     return;
   }
 
-  if (this->sensor_situation_ != data_buffer_[SITUATION_VALUE_INDEX]) {
-    this->sensor_situation_ = data_buffer_[SITUATION_VALUE_INDEX];
-    if (this->sensor_situation_ == 1)
-      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
-    else if (this->sensor_situation_ == 2) {
-      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
-      this->status_set_warning();
-    } else if (this->sensor_situation_ == 3)
-      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
-    else if (this->sensor_situation_ == 0x80) {
-      ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
-
-      if (this->pm_1_0_sensor_ != nullptr) {
-        int16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
-        ESP_LOGD(TAG, "PM1.0: %d", pm1);
-        this->pm_1_0_sensor_->publish_state(pm1);
-      }
-
-      if (this->pm_2_5_sensor_ != nullptr) {
-        int16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
-        ESP_LOGD(TAG, "PM2.5: %d", pm25);
-        this->pm_2_5_sensor_->publish_state(pm25);
-      }
-
-      if (this->pm_10_0_sensor_ != nullptr) {
-        int16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
-        ESP_LOGD(TAG, "PM10: %d", pm10);
-        this->pm_10_0_sensor_->publish_state(pm10);
-      }
-
-      uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
-      if (sensor_measuring_mode >= 2 && sensor_measuring_mode <= 5) {
-        ESP_LOGD(TAG, "The measuring mode of sensor: %s.",
-                 LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
-      }
-
-      this->status_clear_warning();
-    }
+  if (this->sensor_situation_ == data_buffer_[SITUATION_VALUE_INDEX]) {
+    return;
   }
+
+  this->sensor_situation_ = data_buffer_[SITUATION_VALUE_INDEX];
+  ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
+  if (this->sensor_situation_ == 2) {
+    this->status_set_warning();
+    return;
+  }
+  if (this->sensor_situation_ != 0x80) {
+    return;
+  }
+
+  if (this->pm_1_0_sensor_ != nullptr) {
+    int16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
+    ESP_LOGD(TAG, "PM1.0: %d", pm1);
+    this->pm_1_0_sensor_->publish_state(pm1);
+  }
+
+  if (this->pm_2_5_sensor_ != nullptr) {
+    int16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
+    ESP_LOGD(TAG, "PM2.5: %d", pm25);
+    this->pm_2_5_sensor_->publish_state(pm25);
+  }
+
+  if (this->pm_10_0_sensor_ != nullptr) {
+    int16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
+    ESP_LOGD(TAG, "PM10: %d", pm10);
+    this->pm_10_0_sensor_->publish_state(pm10);
+  }
+
+  uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
+  ESP_LOGD(TAG, "The measuring mode of sensor: %s.",
+           LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
+
+  this->status_clear_warning();
 }
 
 uint16_t PM2005Component::get_sensor_value_(const uint8_t *data, uint8_t i) {
