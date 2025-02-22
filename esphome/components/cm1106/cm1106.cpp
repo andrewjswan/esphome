@@ -6,6 +6,8 @@
 namespace esphome {
 namespace cm1106 {
 
+static const char *const TAG = "cm1106";
+
 uint8_t cm1106_checksum(const uint8_t *response, size_t len) {
   uint8_t crc = 0;
   for (int i = 0; i < len - 1; i++) {
@@ -16,7 +18,8 @@ uint8_t cm1106_checksum(const uint8_t *response, size_t len) {
 
 void CM1106Component::update() {
   uint8_t response[8] = {0};
-  if (!this->cm1106_write_command_(c_m1106_cmd_get_c_o2_, sizeof(c_m1106_cmd_get_c_o2_), response, sizeof(response))) {
+  if (!this->cm1106_write_command_(this->c_m1106_cmd_get_co2_, sizeof(this->c_m1106_cmd_get_co2_), response,
+                                   sizeof(response))) {
     ESP_LOGW(TAG, "Reading data from CM1106 failed!");
     this->status_set_warning();
     return;
@@ -46,7 +49,7 @@ void CM1106Component::update() {
 
 void CM1106Component::calibrate_zero(uint16_t ppm) {
   uint8_t cmd[6];
-  memcpy(cmd, c_m1106_cmd_set_c_o2_calib_, sizeof(cmd));
+  memcpy(cmd, this->c_m1106_cmd_set_co2_calib_, sizeof(cmd));
   cmd[3] = ppm >> 8;
   cmd[4] = ppm & 0xFF;
   uint8_t response[4] = {0};
@@ -58,7 +61,7 @@ void CM1106Component::calibrate_zero(uint16_t ppm) {
   }
 
   // check if correct response received
-  if (memcmp(response, c_m1106_cmd_set_c_o2_calib_response_, sizeof(response)) != 0) {
+  if (memcmp(response, this->c_m1106_cmd_set_co2_calib_response_, sizeof(response)) != 0) {
     ESP_LOGW(TAG, "Got wrong UART response from CM1106: %02X %02X %02X %02X", response[0], response[1], response[2],
              response[3]);
     this->status_set_warning();
