@@ -16,6 +16,17 @@ uint8_t cm1106_checksum(const uint8_t *response, size_t len) {
   return crc;
 }
 
+void CM1106Component::setup() {
+  ESP_LOGCONFIG(TAG, "Setting up CM1106...");
+  uint8_t response[8] = {0};
+  if (!this->cm1106_write_command_(this->c_m1106_cmd_get_co2_, sizeof(this->c_m1106_cmd_get_co2_), response,
+                                   sizeof(response))) {
+    ESP_LOGW(TAG, "Reading data from CM1106 failed!");
+    this->mark_failed();
+    return;
+  }
+}
+
 void CM1106Component::update() {
   uint8_t response[8] = {0};
   if (!this->cm1106_write_command_(this->c_m1106_cmd_get_co2_, sizeof(this->c_m1106_cmd_get_co2_), response,
@@ -91,6 +102,9 @@ void CM1106Component::dump_config() {
   ESP_LOGCONFIG(TAG, "CM1106:");
   LOG_SENSOR("  ", "CO2", this->co2_sensor_);
   this->check_uart_settings(9600);
+  if (this->is_failed()) {
+    ESP_LOGE(TAG, "Communication with CM1106 failed!");
+  }
 }
 
 }  // namespace cm1106
