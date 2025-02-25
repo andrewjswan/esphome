@@ -17,6 +17,7 @@ class PM2005Component : public PollingComponent, public i2c::I2CDevice {
   void set_pm_2_5_sensor(sensor::Sensor *pm_2_5_sensor) { this->pm_2_5_sensor_ = pm_2_5_sensor; }
   void set_pm_10_0_sensor(sensor::Sensor *pm_10_0_sensor) { this->pm_10_0_sensor_ = pm_10_0_sensor; }
 
+  void setup() override;
   void dump_config() override;
   void update() override;
 

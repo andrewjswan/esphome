@@ -50,6 +50,19 @@ static const LogString *pm2005_get_measuring_mode_string(int status) {
   }
 }
 
+void PM2005Component::setup() {
+#ifdef PM2005_USE_TYPE_2005
+  ESP_LOGCONFIG(TAG, "Setting up PM2005...");
+#else
+  ESP_LOGCONFIG(TAG, "Setting up PM2105...");
+#endif
+  if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
+    ESP_LOGW(TAG, "Read result failed");
+    this->mark_failed();
+    return;
+  }
+}
+
 void PM2005Component::update() {
   if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
     ESP_LOGW(TAG, "Read result failed");
@@ -110,6 +123,14 @@ void PM2005Component::dump_config() {
 #endif
 
   LOG_I2C_DEVICE(this);
+  if (this->is_failed()) {
+#ifdef PM2005_USE_TYPE_2005
+    ESP_LOGE(TAG, "Communication with PM2005 failed!");
+#else
+    ESP_LOGE(TAG, "Communication with PM2105 failed!");
+#endif
+  }
+
   LOG_SENSOR("  ", "PM1.0", this->pm_1_0_sensor_);
   LOG_SENSOR("  ", "PM2.5", this->pm_2_5_sensor_);
   LOG_SENSOR("  ", "PM10 ", this->pm_10_0_sensor_);
