@@ -57,7 +57,7 @@ void PM2005Component::setup() {
   ESP_LOGCONFIG(TAG, "Setting up PM2105...");
 #endif
   if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
-    ESP_LOGW(TAG, "Read result failed");
+    ESP_LOGE(TAG, "Communication failed!");
     this->mark_failed();
     return;
   }
@@ -65,7 +65,7 @@ void PM2005Component::setup() {
 
 void PM2005Component::update() {
   if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
-    ESP_LOGW(TAG, "Read result failed");
+    ESP_LOGW(TAG, "Read result failed.");
     this->status_set_warning();
     return;
   }
@@ -84,21 +84,18 @@ void PM2005Component::update() {
     return;
   }
 
+  int16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
+  int16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
+  int16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
+  ESP_LOGD(TAG, "PM1.0: %d, PM2.5: %d, PM10: %d", pm1, pm25, pm10);
+
   if (this->pm_1_0_sensor_ != nullptr) {
-    int16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
-    ESP_LOGD(TAG, "PM1.0: %d", pm1);
     this->pm_1_0_sensor_->publish_state(pm1);
   }
-
   if (this->pm_2_5_sensor_ != nullptr) {
-    int16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
-    ESP_LOGD(TAG, "PM2.5: %d", pm25);
     this->pm_2_5_sensor_->publish_state(pm25);
   }
-
   if (this->pm_10_0_sensor_ != nullptr) {
-    int16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
-    ESP_LOGD(TAG, "PM10: %d", pm10);
     this->pm_10_0_sensor_->publish_state(pm10);
   }
 
