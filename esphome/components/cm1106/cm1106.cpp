@@ -21,7 +21,7 @@ void CM1106Component::setup() {
   uint8_t response[8] = {0};
   if (!this->cm1106_write_command_(this->c_m1106_cmd_get_co2_, sizeof(this->c_m1106_cmd_get_co2_), response,
                                    sizeof(response))) {
-    ESP_LOGW(TAG, "Reading data from CM1106 failed!");
+    ESP_LOGE(TAG, "Communication with CM1106 failed!");
     this->mark_failed();
     return;
   }
