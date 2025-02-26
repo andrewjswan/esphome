@@ -17,8 +17,6 @@ from esphome.const import (
 DEPENDENCIES = ["uart"]
 CODEOWNERS = ["@andrewjswan"]
 
-CONF_AUTOMATIC_BASELINE_CALIBRATION = "automatic_baseline_calibration"
-
 cm1106_ns = cg.esphome_ns.namespace("cm1106")
 CM1106Component = cm1106_ns.class_(
     "CM1106Component", cg.PollingComponent, uart.UARTDevice
@@ -41,7 +39,6 @@ CONFIG_SCHEMA = (
                 device_class=DEVICE_CLASS_CARBON_DIOXIDE,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
-            cv.Optional(CONF_AUTOMATIC_BASELINE_CALIBRATION): cv.boolean,
         },
     )
     .extend(cv.polling_component_schema("60s"))
@@ -54,10 +51,8 @@ async def to_code(config) -> None:
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
-
-    if CONF_CO2 in config:
-        sens = await sensor.new_sensor(config[CONF_CO2])
-        cg.add(var.set_co2_sensor(sens))
+    sens = await sensor.new_sensor(config[CONF_CO2])
+    cg.add(var.set_co2_sensor(sens))
 
 
 CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
@@ -72,7 +67,7 @@ CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
     CM1106CalibrateZeroAction,
     CALIBRATION_ACTION_SCHEMA,
 )
-async def cm1106_calibration_to_code(config, action_id, template_arg, args) -> None:  # noqa: ARG001
+async def cm1106_calibration_to_code(config, action_id, template_arg, args) -> None:
     """Service code generation entry point."""
     paren = await cg.get_variable(config[CONF_ID])
     return cg.new_Pvariable(action_id, template_arg, paren)
