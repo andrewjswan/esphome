@@ -40,13 +40,13 @@ static const LogString *pm2005_get_situation_string(int status) {
 static const LogString *pm2005_get_measuring_mode_string(int status) {
   switch (status) {
     case 2:
-      return LOG_STR("Single measuring mode");
+      return LOG_STR("Single");
     case 3:
-      return LOG_STR("Continuous measuring mode");
+      return LOG_STR("Continuous");
     case 5:
-      return LOG_STR("Dynamic measuring mode");
+      return LOG_STR("Dynamic");
     default:
-      return LOG_STR("Timing measuring mode");
+      return LOG_STR("Timing");
   }
 }
 
@@ -84,10 +84,12 @@ void PM2005Component::update() {
     return;
   }
 
-  int16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
-  int16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
-  int16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
-  ESP_LOGD(TAG, "PM1.0: %d, PM2.5: %d, PM10: %d", pm1, pm25, pm10);
+  uint16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
+  uint16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
+  uint16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
+  uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
+  ESP_LOGD(TAG, "PM1.0: %d, PM2.5: %d, PM10: %d, Measuring mode: %s.", pm1, pm25, pm10,
+           LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
 
   if (this->pm_1_0_sensor_ != nullptr) {
     this->pm_1_0_sensor_->publish_state(pm1);
@@ -98,10 +100,6 @@ void PM2005Component::update() {
   if (this->pm_10_0_sensor_ != nullptr) {
     this->pm_10_0_sensor_->publish_state(pm10);
   }
-
-  uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
-  ESP_LOGD(TAG, "The measuring mode of sensor: %s.",
-           LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
 
   this->status_clear_warning();
 }
