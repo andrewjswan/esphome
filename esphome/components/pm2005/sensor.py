@@ -25,21 +25,18 @@ PM2005Component = pm2005_ns.class_(
     "PM2005Component", cg.PollingComponent, i2c.I2CDevice
 )
 
-TYPE_2005 = "PM2005"
-TYPE_2105 = "PM2105"
-SENSOR_TYPE = [
-    TYPE_2005,
-    TYPE_2105,
-]
+SensorType = pm2005_ns.enum("SensorType")
+SENSOR_TYPE = {
+    "PM2005": SensorType.PM2005,
+    "PM2105": SensorType.PM2105,
+}
 
 
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(PM2005Component),
-            cv.Optional(CONF_TYPE, default=TYPE_2005): cv.one_of(
-                *SENSOR_TYPE, upper=True
-            ),
+            cv.Optional(CONF_TYPE, default="PM2005"): cv.enum(SENSOR_TYPE, upper=True),
             cv.Optional(CONF_PM_1_0): sensor.sensor_schema(
                 unit_of_measurement=UNIT_MICROGRAMS_PER_CUBIC_METER,
                 icon=ICON_CHEMICAL_WEAPON,
@@ -74,10 +71,7 @@ async def to_code(config) -> None:
     await cg.register_component(var, config)
     await i2c.register_i2c_device(var, config)
 
-    if config[CONF_TYPE] == TYPE_2005:
-        cg.add_define("PM2005_USE_TYPE_2005")
-    else:
-        cg.add_define("PM2005_USE_TYPE_2105")
+    cg.add(var.set_sensor_type(config[CONF_TYPE]))
 
     if CONF_PM_1_0 in config:
         sens = await sensor.new_sensor(config[CONF_PM_1_0])

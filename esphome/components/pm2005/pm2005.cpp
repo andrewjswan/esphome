@@ -6,20 +6,6 @@ namespace pm2005 {
 
 static const char *const TAG = "pm2005";
 
-#ifdef PM2005_USE_TYPE_2005
-static const uint8_t SITUATION_VALUE_INDEX = 3;
-static const uint8_t PM_1_0_VALUE_INDEX = 4;
-static const uint8_t PM_2_5_VALUE_INDEX = 6;
-static const uint8_t PM_10_0_VALUE_INDEX = 8;
-static const uint8_t MEASURING_VALUE_INDEX = 10;
-#else
-static const uint8_t SITUATION_VALUE_INDEX = 2;
-static const uint8_t PM_1_0_VALUE_INDEX = 3;
-static const uint8_t PM_2_5_VALUE_INDEX = 5;
-static const uint8_t PM_10_0_VALUE_INDEX = 7;
-static const uint8_t MEASURING_VALUE_INDEX = 9;
-#endif
-
 // Converts a sensor situation to a human readable string
 static const LogString *pm2005_get_situation_string(int status) {
   switch (status) {
@@ -51,11 +37,24 @@ static const LogString *pm2005_get_measuring_mode_string(int status) {
 }
 
 void PM2005Component::setup() {
-#ifdef PM2005_USE_TYPE_2005
-  ESP_LOGCONFIG(TAG, "Setting up PM2005...");
-#else
-  ESP_LOGCONFIG(TAG, "Setting up PM2105...");
-#endif
+  if (this->sensor_type_ == PM2005) {
+    ESP_LOGCONFIG(TAG, "Setting up PM2005...");
+
+    this->situation_value_index_ = 3;
+    this->pm_1_0_value_index_ = 4;
+    this->pm_2_5_value_index_ = 6;
+    this->pm_10_0_value_index_ = 8;
+    this->measuring_value_index_ = 10;
+  } else {
+    ESP_LOGCONFIG(TAG, "Setting up PM2105...");
+
+    this->situation_value_index_ = 2;
+    this->pm_1_0_value_index_ = 3;
+    this->pm_2_5_value_index_ = 5;
+    this->pm_10_0_value_index_ = 7;
+    this->measuring_value_index_ = 9;
+  }
+
   if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
     ESP_LOGE(TAG, "Communication failed!");
     this->mark_failed();
@@ -70,11 +69,11 @@ void PM2005Component::update() {
     return;
   }
 
-  if (this->sensor_situation_ == data_buffer_[SITUATION_VALUE_INDEX]) {
+  if (this->sensor_situation_ == data_buffer_[this->situation_value_index_]) {
     return;
   }
 
-  this->sensor_situation_ = data_buffer_[SITUATION_VALUE_INDEX];
+  this->sensor_situation_ = data_buffer_[this->situation_value_index_];
   ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
   if (this->sensor_situation_ == 2) {
     this->status_set_warning();
@@ -84,10 +83,10 @@ void PM2005Component::update() {
     return;
   }
 
-  uint16_t pm1 = get_sensor_value_(data_buffer_, PM_1_0_VALUE_INDEX);
-  uint16_t pm25 = get_sensor_value_(data_buffer_, PM_2_5_VALUE_INDEX);
-  uint16_t pm10 = get_sensor_value_(data_buffer_, PM_10_0_VALUE_INDEX);
-  uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, MEASURING_VALUE_INDEX);
+  uint16_t pm1 = get_sensor_value_(data_buffer_, this->pm_1_0_value_index_);
+  uint16_t pm25 = get_sensor_value_(data_buffer_, this->pm_2_5_value_index_);
+  uint16_t pm10 = get_sensor_value_(data_buffer_, this->pm_10_0_value_index_);
+  uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, this->measuring_value_index_);
   ESP_LOGD(TAG, "PM1.0: %d, PM2.5: %d, PM10: %d, Measuring mode: %s.", pm1, pm25, pm10,
            LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
 
@@ -111,19 +110,19 @@ uint16_t PM2005Component::get_sensor_value_(const uint8_t *data, uint8_t i) {
 void PM2005Component::dump_config() {
   ESP_LOGCONFIG(TAG, "PM2005:");
 
-#ifdef PM2005_USE_TYPE_2005
-  ESP_LOGCONFIG(TAG, "  Type: PM2005");
-#else
-  ESP_LOGCONFIG(TAG, "  Type: PM2105");
-#endif
+  if (this->sensor_type_ == PM2005) {
+    ESP_LOGCONFIG(TAG, "  Type: PM2005");
+  } else {
+    ESP_LOGCONFIG(TAG, "  Type: PM2105");
+  }
 
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
-#ifdef PM2005_USE_TYPE_2005
-    ESP_LOGE(TAG, "Communication with PM2005 failed!");
-#else
-    ESP_LOGE(TAG, "Communication with PM2105 failed!");
-#endif
+    if (this->sensor_type_ == PM2005) {
+      ESP_LOGE(TAG, "Communication with PM2005 failed!");
+    } else {
+      ESP_LOGE(TAG, "Communication with PM2105 failed!");
+    }
   }
 
   LOG_SENSOR("  ", "PM1.0", this->pm_1_0_sensor_);
