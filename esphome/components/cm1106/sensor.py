@@ -32,7 +32,7 @@ CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(CM1106Component),
-            cv.Required(CONF_CO2): sensor.sensor_schema(
+            cv.Optional(CONF_CO2): sensor.sensor_schema(
                 unit_of_measurement=UNIT_PARTS_PER_MILLION,
                 icon=ICON_MOLECULE_CO2,
                 accuracy_decimals=0,
@@ -51,8 +51,9 @@ async def to_code(config) -> None:
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
-    sens = await sensor.new_sensor(config[CONF_CO2])
-    cg.add(var.set_co2_sensor(sens))
+    if CONF_CO2 in config:
+        sens = await sensor.new_sensor(config[CONF_CO2])
+        cg.add(var.set_co2_sensor(sens))
 
 
 CALIBRATION_ACTION_SCHEMA = maybe_simple_id(
