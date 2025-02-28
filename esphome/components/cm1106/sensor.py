@@ -51,8 +51,8 @@ async def to_code(config) -> None:
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
-    if CONF_CO2 in config:
-        sens = await sensor.new_sensor(config[CONF_CO2])
+    if co2_config := config.get(CONF_CO2):
+        sens = await sensor.new_sensor(co2_config)
         cg.add(var.set_co2_sensor(sens))
 
 
