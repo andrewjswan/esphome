@@ -37,8 +37,6 @@ class PM2005Component : public PollingComponent, public i2c::I2CDevice {
   sensor::Sensor *pm_2_5_sensor_{nullptr};
   sensor::Sensor *pm_10_0_sensor_{nullptr};
 
-  uint16_t get_sensor_value_(const uint8_t *data, uint8_t i);
-
   uint8_t situation_value_index_{3};
   uint8_t pm_1_0_value_index_{4};
   uint8_t pm_2_5_value_index_{6};

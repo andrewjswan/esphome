@@ -36,6 +36,10 @@ static const LogString *pm2005_get_measuring_mode_string(int status) {
   }
 }
 
+static inline uint16_t get_sensor_value_(const uint8_t *data, uint8_t i) {
+  return data[i] * 0x100 + data[i + 1];
+}
+
 void PM2005Component::setup() {
   if (this->sensor_type_ == PM2005) {
     ESP_LOGCONFIG(TAG, "Setting up PM2005...");
@@ -55,7 +59,7 @@ void PM2005Component::setup() {
     this->measuring_value_index_ = 9;
   }
 
-  if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
+  if (this->read(this->data_buffer_, 12) != i2c::ERROR_OK) {
     ESP_LOGE(TAG, "Communication failed!");
     this->mark_failed();
     return;
@@ -63,17 +67,17 @@ void PM2005Component::setup() {
 }
 
 void PM2005Component::update() {
-  if (this->read(data_buffer_, 12) != i2c::ERROR_OK) {
+  if (this->read(this->data_buffer_, 12) != i2c::ERROR_OK) {
     ESP_LOGW(TAG, "Read result failed.");
     this->status_set_warning();
     return;
   }
 
-  if (this->sensor_situation_ == data_buffer_[this->situation_value_index_]) {
+  if (this->sensor_situation_ == this->data_buffer_[this->situation_value_index_]) {
     return;
   }
 
-  this->sensor_situation_ = data_buffer_[this->situation_value_index_];
+  this->sensor_situation_ = this->data_buffer_[this->situation_value_index_];
   ESP_LOGD(TAG, "Sensor situation: %s.", LOG_STR_ARG(pm2005_get_situation_string(this->sensor_situation_)));
   if (this->sensor_situation_ == 2) {
     this->status_set_warning();
@@ -83,10 +87,10 @@ void PM2005Component::update() {
     return;
   }
 
-  uint16_t pm1 = get_sensor_value_(data_buffer_, this->pm_1_0_value_index_);
-  uint16_t pm25 = get_sensor_value_(data_buffer_, this->pm_2_5_value_index_);
-  uint16_t pm10 = get_sensor_value_(data_buffer_, this->pm_10_0_value_index_);
-  uint16_t sensor_measuring_mode = get_sensor_value_(data_buffer_, this->measuring_value_index_);
+  uint16_t pm1 = get_sensor_value_(this->data_buffer_, this->pm_1_0_value_index_);
+  uint16_t pm25 = get_sensor_value_(this->data_buffer_, this->pm_2_5_value_index_);
+  uint16_t pm10 = get_sensor_value_(this->data_buffer_, this->pm_10_0_value_index_);
+  uint16_t sensor_measuring_mode = get_sensor_value_(this->data_buffer_, this->measuring_value_index_);
   ESP_LOGD(TAG, "PM1.0: %d, PM2.5: %d, PM10: %d, Measuring mode: %s.", pm1, pm25, pm10,
            LOG_STR_ARG(pm2005_get_measuring_mode_string(sensor_measuring_mode)));
 
@@ -101,10 +105,6 @@ void PM2005Component::update() {
   }
 
   this->status_clear_warning();
-}
-
-uint16_t PM2005Component::get_sensor_value_(const uint8_t *data, uint8_t i) {
-  return data_buffer_[i] * 0x100 + data_buffer_[i + 1];
 }
 
 void PM2005Component::dump_config() {
